@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#f8fafc">
+    <title>Reasoning - Coding Decoding (Lecture 3)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg-main: #f8fafc; --bg-card: #ffffff; --primary: #2563eb; --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff; --text-dark: #0f172a; --text-muted: #64748b; --border-color: #e2e8f0;
+            --green: #10b981; --green-light: #ecfdf5; --red: #ef4444; --red-light: #fef2f2;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg-main); color: var(--text-dark); min-height: 100dvh; font-size: 15px; line-height: 1.5; overflow-x: hidden; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        .hidden { display: none !important; }
+        .start-screen { position: fixed; inset: 0; background: var(--bg-main); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .start-card { width: 100%; max-width: 440px; background: var(--bg-card); border-radius: 24px; padding: 36px 28px; box-shadow: var(--shadow-lg); text-align: center; border: 1px solid var(--border-color); }
+        .brand-icon { width: 60px; height: 60px; background: var(--primary-light); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 16px; }
+        .start-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+        .start-desc { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+        .mode-btn { display: flex; align-items: center; gap: 16px; width: 100%; padding: 16px; background: #fff; border: 1.5px solid var(--border-color); border-radius: 16px; text-align: left; margin-bottom: 12px; transition: all 0.2s ease; }
+        .mode-btn:hover { border-color: var(--primary); background: var(--primary-light); transform: translateY(-2px); }
+        .mode-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .mode-icon.quiz { background: #dbeafe; color: #2563eb; }
+        .mode-icon.test { background: #d1fae5; color: #059669; }
+        .mode-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+        .mode-info-txt { font-size: 12px; color: var(--text-muted); }
+        .quiz-app { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .quiz-header { flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border-color); padding: 12px 18px; }
+        .quiz-header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .hdr-brand { font-weight: 700; font-size: 15px; }
+        .hdr-timer { padding: 6px 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 20px; font-family: monospace; font-weight: 700; color: var(--primary); }
+        .hdr-btn { width: 38px; height: 38px; border-radius: 10px; background: #fff; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; }
+        .quiz-main { flex: 1; overflow-y: auto; max-width: 900px; width: 100%; margin: 0 auto; padding: 24px 16px; }
+        .q-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-sm); }
+        .q-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+        .q-num-badge { padding: 5px 12px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .lang-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border-color); font-size: 12px; font-weight: 600; background: #fff; display: inline-flex; align-items: center; gap: 6px; }
+        .q-text { font-size: 16px; font-weight: 600; line-height: 1.6; margin-bottom: 22px; white-space: pre-line; }
+        .opts { display: flex; flex-direction: column; gap: 11px; }
+        .opt { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border: 1.5px solid var(--border-color); border-radius: 14px; cursor: pointer; transition: all 0.15s ease; }
+        .opt:hover:not(.locked) { border-color: var(--primary); background: #f8fafc; }
+        .opt.selected { border-color: var(--primary); background: var(--primary-light); }
+        .opt.correct { border-color: var(--green); background: var(--green-light); }
+        .opt.wrong { border-color: var(--red); background: var(--red-light); }
+        .opt.locked { cursor: default; }
+        .opt-letter { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
+        .opt.selected .opt-letter { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .opt.correct .opt-letter { background: var(--green); color: #fff; border-color: var(--green); }
+        .opt.wrong .opt-letter { background: var(--red); color: #fff; border-color: var(--red); }
+        .opt-text { flex: 1; font-weight: 600; }
+        .opt-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+        .opt.correct .opt-tag { background: var(--green); color: #fff; }
+        .opt.wrong .opt-tag { background: var(--red); color: #fff; }
+        .sol-box { margin-top: 20px; padding: 16px; background: #f8fafc; border-left: 4px solid var(--primary); border-radius: 12px; }
+        .sol-head { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; }
+        .quiz-nav { flex-shrink: 0; background: #fff; border-top: 1px solid var(--border-color); padding: 12px 18px; }
+        .quiz-nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .nav-btn { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+        .nav-btn.prev { background: #fff; border: 1px solid var(--border-color); }
+        .nav-btn.prev:disabled { opacity: 0.4; cursor: not-allowed; }
+        .nav-btn.submit { background: var(--green-light); color: #065f46; border: 1px solid #a7f3d0; }
+        .nav-btn.next { background: var(--primary); color: #fff; }
+        .palette-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
+        .palette-overlay.open { display: block; }
+        .palette-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(340px, 85vw); background: #fff; z-index: 160; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.25s; }
+        .palette-drawer.open { transform: translateX(0); }
+        .pal-head { padding: 18px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; font-weight: 700; }
+        .pal-grid { flex: 1; overflow-y: auto; padding: 16px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-content: start; }
+        .pal-btn { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--border-color); background: #f8fafc; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+        .pal-btn.answered { background: var(--green); color: #fff; border-color: var(--green); }
+        .pal-btn.current { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 170; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; padding: 28px; text-align: center; }
+        .modal-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 22px; }
+        .modal-stat { background: #f8fafc; border-radius: 12px; padding: 14px; border: 1px solid var(--border-color); }
+        .modal-stat-num { font-size: 24px; font-weight: 800; }
+        .modal-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .modal-btn.confirm { background: var(--primary); color: #fff; }
+        .modal-btn.cancel { background: #f1f5f9; }
+        .results-screen { position: fixed; inset: 0; background: var(--bg-main); z-index: 180; display: none; overflow-y: auto; padding: 30px 16px 60px; }
+        .results-screen.open { display: block; }
+        .results-box { max-width: 600px; margin: 0 auto; text-align: center; }
+        .res-score-card { background: #0f172a; color: #fff; border-radius: 20px; padding: 28px; margin: 20px 0; }
+        .res-score-val { font-size: 54px; font-weight: 800; }
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .res-item { background: #fff; border-radius: 14px; padding: 16px; border: 1px solid var(--border-color); }
+        .res-item-val { font-size: 22px; font-weight: 700; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-80px); background: #0f172a; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 300; opacity: 0; transition: all 0.25s; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="start-screen" id="startScreen">
+        <div class="start-card">
+            <div class="brand-icon"><i class="fas fa-brain"></i></div>
+            <h1 class="start-title">Reasoning - Coding Decoding</h1>
+            <p class="start-desc">Number & Symbol Coding (Lecture 3)</p>
+            <button class="mode-btn" onclick="startApp('quiz')">
+                <div class="mode-icon quiz"><i class="fas fa-bolt"></i></div>
+                <div><div class="mode-name">Practice Mode</div><div class="mode-info-txt">Instant correct/wrong answer and explanations.</div></div>
+            </button>
+            <button class="mode-btn" onclick="startApp('test')">
+                <div class="mode-icon test"><i class="fas fa-clock"></i></div>
+                <div><div class="mode-name">Exam Mode</div><div class="mode-info-txt">Mock exam with timer and score summary.</div></div>
+            </button>
+        </div>
+    </div>
+
+    <div class="quiz-app hidden" id="quizApp">
+        <header class="quiz-header">
+            <div class="quiz-header-inner">
+                <button class="hdr-btn" onclick="openPalette()"><i class="fas fa-th-large"></i></button>
+                <div class="hdr-brand">Coding Decoding - Lecture 3</div>
+                <div class="hdr-timer"><i class="fas fa-stopwatch"></i> <span id="timerText">00:00</span></div>
+            </div>
+        </header>
+
+        <main class="quiz-main" id="quizMain"></main>
+
+        <nav class="quiz-nav" id="quizNav">
+            <div class="quiz-nav-inner">
+                <button class="nav-btn prev" id="prevBtn" onclick="prevQuestion()"><i class="fas fa-arrow-left"></i> Previous</button>
+                <button class="nav-btn submit" onclick="openSubmitModal()"><i class="fas fa-paper-plane"></i> Submit</button>
+                <button class="nav-btn next" id="nextBtn" onclick="nextQuestion()"><span id="nextLabel">Next</span> <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </nav>
+    </div>
+
+    <div class="palette-overlay" id="paletteOverlay" onclick="closePalette()"></div>
+    <aside class="palette-drawer" id="paletteDrawer">
+        <div class="pal-head"><span>Questions</span><button onclick="closePalette()"><i class="fas fa-times"></i></button></div>
+        <div class="pal-grid" id="paletteGrid"></div>
+    </aside>
+
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal-box">
+            <h3>Submit Test?</h3>
+            <div class="modal-stats-grid">
+                <div class="modal-stat"><div class="modal-stat-num" id="modalAttempted" style="color:var(--green)">0</div><div>Attempted</div></div>
+                <div class="modal-stat"><div class="modal-stat-num" id="modalUnattempted" style="color:var(--text-muted)">0</div><div>Unattempted</div></div>
+            </div>
+            <button class="modal-btn confirm" onclick="confirmSubmit()">Yes, Finish</button>
+            <button class="modal-btn cancel" onclick="closeSubmitModal()">Resume</button>
+        </div>
+    </div>
+
+    <div class="results-screen" id="resultsScreen"><div class="results-box" id="resultsInner"></div></div>
+    <div class="toast" id="toast"><span id="toastText"></span></div>
+
+    <script>
+        const QUESTIONS = [
+            {
+                e: "In a certain code language, 'LAMP' is coded as '5729' and 'RACK' is coded as '8371'. What is the code for 'A' in the given code language?",
+                h: "एक निश्चित कूट भाषा में, 'LAMP' को '5729' और 'RACK' को '8371' के रूप में कूट बद्ध किया जाता है। दी गई कूट भाषा में 'A' के लिए कूट क्या है?",
+                oEn: ["5", "7", "3", "8"],
+                oHi: ["5", "7", "3", "8"],
+                a: 1,
+                sE: "In 'LAMP' (5729) and 'RACK' (8371), the only common letter is 'A', and the only common digit in both codes is '7'. Hence, A = 7.",
+                sH: "'LAMP' (5729) aur 'RACK' (8371) dono me common letter 'A' hai, aur dono numbers me common digit '7' hai. Isliye 'A' ka code 7 hoga."
+            },
+            {
+                e: "In a certain code language, 'LION' is coded as '7294' and 'SOUP' is coded as '8591'. What is the code for 'O' in the given code language?",
+                h: "एक निश्चित कूट भाषा में, 'LION' को '7294' और 'SOUP' को '8591' के रूप में कूट बद्ध किया जाता है। दी गई कूट भाषा में 'O' के लिए कूट क्या है?",
+                oEn: ["7", "9", "2", "5"],
+                oHi: ["7", "9", "2", "5"],
+                a: 1,
+                sE: "In 'LION' (7294) and 'SOUP' (8591), the common letter is 'O', and the common digit in both code sets is '9'. Hence, O = 9.",
+                sH: "'LION' (7294) aur 'SOUP' (8591) me common letter 'O' hai aur common digit '9' hai. Isliye 'O' ka code 9 hai."
+            },
+            {
+                e: "In a certain code language, 'NICK' is coded as '2384' and 'SKIN' is coded as '4638'. What is the code for 'S' in that language?",
+                h: "एक निश्चित कूट भाषा में, 'NICK' को '2384' के रूप में कूट बद्ध किया जाता है और 'SKIN' को '4638' के रूप में कूट बद्ध किया जाता है। उस भाषा में 'S' के लिए कूट क्या है?",
+                oEn: ["3", "8", "6", "2"],
+                oHi: ["3", "8", "6", "2"],
+                a: 2,
+                sE: "Common letters between NICK and SKIN are N, I, K with corresponding common digits 2, 3, 8, 4 excluding 2. Thus {N, I, K} = {2, 3, 8, 4}. In SKIN (4638), the remaining unique letter is 'S' and the unique digit is '6'. Hence, S = 6.",
+                sH: "NICK (2384) aur SKIN (4638) me N, I, K ke digits 3, 4, 8 common hain. SKIN me bacha hua akshar 'S' hai aur bachi hui digit '6' hai. Isliye S = 6."
+            },
+            {
+                e: "In a code language, if MINT is written as M3I9N4T0, then what is the last digit for the code for TIGER in that same language?",
+                h: "एक कूट भाषा में, यदि MINT को M3I9N4T0 लिखा जाता है, तो उसी भाषा में TIGER के अंतिम अक्षर का कूट क्या होगा?",
+                oEn: ["5", "8", "4", "9"],
+                oHi: ["5", "8", "4", "9"],
+                a: 1,
+                sE: "Each letter is followed by the unit digit of its alphabetical position: M(13)->3, I(9)->9, N(14)->4, T(20)->0. For TIGER, the last letter is R (position 18), unit digit is 8.",
+                sH: "Har letter ke sath uski alphabetical position ka unit digit (ikayi ank) likha gaya hai: M(13)->3, I(9)->9, N(14)->4, T(20)->0. TIGER ka antim letter R(18) hai, jiska unit digit 8 hai."
+            },
+            {
+                e: "If MIND is written as N14J10O15E5, then how would GAME be written?",
+                h: "यदि MIND को N14J10O15E5 के रूप में लिखा जाता है, तो GAME को कैसे लिखा जाएगा?",
+                oEn: ["H8B3N15F6", "H8B2N14F6", "H7B3N14F6", "H8B2N15F5"],
+                oHi: ["H8B3N15F6", "H8B2N14F6", "H7B3N14F6", "H8B2N15F5"],
+                a: 1,
+                sE: "Each letter is shifted by +1 and then followed by the position of that new letter: M(+1)=N(14), I(+1)=J(10), N(+1)=O(15), D(+1)=E(5). For GAME: G(+1)=H(8), A(+1)=B(2), M(+1)=N(14), E(+1)=F(6) -> H8B2N14F6.",
+                sH: "Har akshar me +1 karke naya letter aur uski position likhi gayi hai: G(+1)=H(8), A(+1)=B(2), M(+1)=N(14), E(+1)=F(6) -> H8B2N14F6."
+            },
+            {
+                e: "If ACNE can be coded as 3, 7, 29, 11, then BOIL will be coded as:",
+                h: "यदि ACNE को 3, 7, 29, 11 के रूप में कोडित किया जाता है, तो BOIL को कोडित किया जाएगा?",
+                oEn: ["5, 29, 19, 27", "5, 29, 19, 25", "5, 31, 21, 25", "5, 31, 19, 25"],
+                oHi: ["5, 29, 19, 27", "5, 29, 19, 25", "5, 31, 21, 25", "5, 31, 19, 25"],
+                a: 3,
+                sE: "Pattern: (Position * 2) + 1. A: 1*2+1=3, C: 3*2+1=7, N: 14*2+1=29, E: 5*2+1=11. For BOIL: B: 2*2+1=5; O: 15*2+1=31; I: 9*2+1=19; L: 12*2+1=25 -> 5, 31, 19, 25.",
+                sH: "Pattern: (Alphabetical position * 2) + 1. B = 2*2+1 = 5; O = 15*2+1 = 31; I = 9*2+1 = 19; L = 12*2+1 = 25 -> 5, 31, 19, 25."
+            },
+            {
+                e: "If BIRD can be coded as 5, 19, 37, 9, then ECHO will be coded as:",
+                h: "यदि BIRD को 5, 19, 37, 9 के रूप में कोडित किया जाता है, तो ECHO को किस प्रकार कोडित किया जाएगा?",
+                oEn: ["11, 7, 17, 31", "11, 7, 17, 29", "9, 7, 15, 31", "11, 9, 15, 31"],
+                oHi: ["11, 7, 17, 31", "11, 7, 17, 29", "9, 7, 15, 31", "11, 9, 15, 31"],
+                a: 0,
+                sE: "Pattern: (Position * 2) + 1. B: 2*2+1=5, I: 9*2+1=19, R: 18*2+1=37, D: 4*2+1=9. For ECHO: E: 5*2+1=11, C: 3*2+1=7, H: 8*2+1=17, O: 15*2+1=31 -> 11, 7, 17, 31.",
+                sH: "Pattern: (Position * 2) + 1. E = 5*2+1 = 11; C = 3*2+1 = 7; H = 8*2+1 = 17; O = 15*2+1 = 31 -> 11, 7, 17, 31."
+            },
+            {
+                e: "If TIGER can be written as 2097518, how can LION be written?",
+                h: "यदि TIGER को 2097518 के रूप में लिखा जा सकता है, तो LION को कैसे लिखा जाएगा?",
+                oEn: ["1291514", "12915914", "1215914", "1291415"],
+                oHi: ["1291514", "12915914", "1215914", "1291415"],
+                a: 0,
+                sE: "Direct standard positional values: T=20, I=9, G=7, E=5, R=18 -> 2097518. For LION: L=12, I=9, O=15, N=14 -> 1291514.",
+                sH: "Sidha alphabetical positions ko joda gaya hai: L = 12, I = 9, O = 15, N = 14 -> 1291514."
+            },
+            {
+                e: "If BRAVE can be written as 2181225, how can CHAIR be written?",
+                h: "यदि BRAVE को 2181225 के रूप में लिखा जा सकता है, तो CHAIR को कैसे लिखा जाएगा?",
+                oEn: ["3819118", "381918", "38181918", "3181918"],
+                oHi: ["3819118", "381918", "38181918", "3181918"],
+                a: 1,
+                sE: "Direct positional values concatenated: B=2, R=18, A=1, V=22, E=5 -> 2181225. For CHAIR: C=3, H=8, A=1, I=9, R=18 -> 381918.",
+                sH: "Aksharon ke sthan sammanan likhe gaye hain: C=3, H=8, A=1, I=9, R=18 -> 381918."
+            },
+            {
+                e: "In a certain code language, \"LION\" is coded as \"50\" and \"BEAR\" is coded as \"26\". What is the code for \"TIGER\" in the given language?",
+                h: "एक निश्चित कूट भाषा में, \"LION\" को \"50\" के रूप में कूट बद्ध किया जाता है और \"BEAR\" को \"26\" के रूप में कूट बद्ध किया जाता है। दी गई भाषा में \"TIGER\" के लिए कूट क्या है?",
+                oEn: ["63", "61", "59", "67"],
+                oHi: ["63", "61", "59", "67"],
+                a: 2,
+                sE: "Sum of positions: LION = 12 + 9 + 15 + 14 = 50. BEAR = 2 + 5 + 1 + 18 = 26. For TIGER = 20 + 9 + 7 + 5 + 18 = 59.",
+                sH: "Alphabet positions ka yog: T(20) + I(9) + G(7) + E(5) + R(18) = 59."
+            },
+            {
+                e: "In a certain code language, \"BOAT\" is coded as \"38\" and \"FISH\" is coded as \"42\". What is the code for \"PARK\" in that given language?",
+                h: "एक निश्चित कूट भाषा में, \"BOAT\" को \"38\" के रूप में कूट बद्ध किया जाता है और \"FISH\" को \"42\" के रूप में कूट बद्ध किया जाता है। उसी दी गई भाषा में \"PARK\" के लिए कूट क्या है?",
+                oEn: ["41", "43", "46", "48"],
+                oHi: ["41", "43", "46", "48"],
+                a: 2,
+                sE: "Sum of positional values: BOAT = 2 + 15 + 1 + 20 = 38. FISH = 6 + 9 + 19 + 8 = 42. For PARK = 16 + 1 + 18 + 11 = 46.",
+                sH: "Positional values ka sum: P(16) + A(1) + R(18) + K(11) = 46."
+            },
+            {
+                e: "In a code language, 'PEN' is coded as 105 and 'MORE' is coded as 204. How will 'LIGHT' be coded in the same language?",
+                h: "एक कोड भाषा में, 'PEN' को 105 के रूप में कोडित किया जाता है और 'MORE' को 204 के रूप में कोडित किया जाता है। उसी भाषा में 'LIGHT' को कैसे कोडित किया जाएगा?",
+                oEn: ["250", "280", "260", "245"],
+                oHi: ["250", "280", "260", "245"],
+                a: 1,
+                sE: "Pattern: (Sum of letters) * (Number of letters). PEN: (16+5+14) = 35 * 3 = 105. MORE: (13+15+18+5) = 51 * 4 = 204. For LIGHT: (12+9+7+8+20) = 56 * 5 = 280.",
+                sH: "Pattern: (Aksharon ke sthan ka yog) * (Kul aksharon ki sankhya). LIGHT = (12 + 9 + 7 + 8 + 20) = 56. Akshar = 5, isliye 56 * 5 = 280."
+            },
+            {
+                e: "In a code language, 'CAT' is coded as 72 and 'PARK' is coded as 184. How will 'SMART' be coded in the same language?",
+                h: "एक कोड भाषा में, 'CAT' को 72 के रूप में कोडित किया जाता है और 'PARK' को 184 के रूप में कोडित किया जाता है। उसी भाषा में 'SMART' को कैसे कोडित किया जाएगा?",
+                oEn: ["345", "355", "365", "375"],
+                oHi: ["345", "355", "365", "375"],
+                a: 1,
+                sE: "Pattern: (Sum of positional values) * (Number of letters). CAT: (3+1+20) = 24 * 3 = 72. PARK: (16+1+18+11) = 46 * 4 = 184. SMART: (19+13+1+18+20) = 71 * 5 = 355.",
+                sH: "Pattern: (Sum of letters) * (Number of letters). SMART = (19 + 13 + 1 + 18 + 20) = 71. Kul akshar = 5, isliye 71 * 5 = 355."
+            },
+            {
+                e: "In a code language, 'DOG' is coded as 78 and 'LION' is coded as 200. How will 'TIGER' be coded in the same language?",
+                h: "एक कोड भाषा में, 'DOG' को 78 के रूप में कोडित किया जाता है और 'LION' को 200 के रूप में कोडित किया जाता है। उसी भाषा में 'TIGER' को कैसे कोडित किया जाएगा?",
+                oEn: ["295", "300", "280", "310"],
+                oHi: ["295", "300", "280", "310"],
+                a: 0,
+                sE: "Pattern: (Sum of positions) * (Number of letters). DOG: (4+15+7) = 26 * 3 = 78. LION: (12+9+15+14) = 50 * 4 = 200. TIGER: (20+9+7+5+18) = 59 * 5 = 295.",
+                sH: "Pattern: (Sum of letters) * (Number of letters). TIGER = (20 + 9 + 7 + 5 + 18) = 59. Kul akshar = 5, isliye 59 * 5 = 295."
+            },
+            {
+                e: "In a certain code language, if train = 6, orange = 9, calendar = 15, then computer = ?",
+                h: "एक निश्चित कोड भाषा में, यदि train = 6, orange = 9, calendar = 15, तो computer = ?",
+                oEn: ["12", "15", "18", "20"],
+                oHi: ["12", "15", "18", "20"],
+                a: 1,
+                sE: "Pattern: (Number of letters * 2) - 4 or similar proportional series: train(5 letters)->6, orange(6 letters)->9, calendar(8 letters)->15. Formula: 3*(n-3). Here computer has 8 letters: 3*(8-3) = 15.",
+                sH: "Pattern: 3 * (Aksharon ki sankhya - 3). train(5) = 3*(5-3)=6; orange(6) = 3*(6-3)=9; calendar(8) = 3*(8-3)=15; computer(8) = 3*(8-3)=15."
+            },
+            {
+                e: "In a certain code language, if storm = 20, apple = 20, virtue = 30, then cupboard = ?",
+                h: "एक निश्चित कोड भाषा में, यदि storm = 20, apple = 20, virtue = 30, तो cupboard = ?",
+                oEn: ["42", "56", "64", "72"],
+                oHi: ["42", "56", "64", "72"],
+                a: 1,
+                sE: "Pattern: Number of letters * (Number of letters - 1). storm(5 letters) = 5*4 = 20. apple(5 letters) = 5*4 = 20. virtue(6 letters) = 6*5 = 30. cupboard(8 letters) = 8*7 = 56.",
+                sH: "Pattern: n * (n - 1), jahan n aksharon ki sankhya hai. cupboard me 8 letters hain: 8 * 7 = 56."
+            },
+            {
+                e: "If LEADERSHIP is coded as 3514591897, then CERTIFICATE is coded as:",
+                h: "यदि LEADERSHIP को 3514591897 के रूप में कोडित किया जाता है, तो CERTIFICATE को कोडित किया जाएगा?",
+                oEn: ["35929693125", "35929693126", "35929693115", "35829693125"],
+                oHi: ["35929693125", "35929693126", "35929693115", "35829693125"],
+                a: 0,
+                sE: "Pattern: Single digit of alphabet position (digital root): C=3, E=5, R=18(1+8=9), T=20(2+0=2), I=9, F=6, I=9, C=3, A=1, T=20(2), E=5 -> 35929693125.",
+                sH: "Pattern: Aksharon ke sthan ke anko ka yog (Digital root): C=3, E=5, R=1+8=9, T=2+0=2, I=9, F=6, I=9, C=3, A=1, T=2, E=5 -> 35929693125."
+            },
+            {
+                e: "If STRENGTH is coded as 12955728, then KNOWLEDGE is coded as:",
+                h: "यदि STRENGTH को 12955728 के रूप में कोडित किया जाता है, तो KNOWLEDGE को कोडित किया जाएगा?",
+                oEn: ["256535475", "256535474", "255535475", "256534475"],
+                oHi: ["256535475", "256535474", "255535475", "256534475"],
+                a: 0,
+                sE: "Pattern: Digital root of position values. K(11->2), N(14->5), O(15->6), W(23->5), L(12->3), E(5), D(4), G(7), E(5) -> 256535475.",
+                sH: "Pattern: Aksharon ke sthan ke anko ka yog: K(1+1=2), N(1+4=5), O(1+5=6), W(2+3=5), L(1+2=3), E(5), D(4), G(7), E(5) -> 256535475."
+            },
+            {
+                e: "In a certain code language, 'PLANT' is written as '161211420' and 'GLOW' is written as '7121523'. How will 'SMART' be written in that language?",
+                h: "एक निश्चित कोड भाषा में, 'PLANT' को '161211420' और 'GLOW' को '7121523' लिखा जाता है। उस भाषा में 'SMART' कैसे लिखा जाएगा?",
+                oEn: ["191311820", "191321820", "191311720", "191311821"],
+                oHi: ["191311820", "191321820", "191311720", "191311821"],
+                a: 0,
+                sE: "Direct alphabet numbers: S=19, M=13, A=1, R=18, T=20 -> 191311820.",
+                sH: "Sabhi aksharon ke standard numbers likhe gaye hain: S=19, M=13, A=1, R=18, T=20 -> 191311820."
+            },
+            {
+                e: "In a certain code language, 'CROWN' is written as '31842314' and 'FLARE' is written as '6121182'. How will 'PLANET' be written in that language?",
+                h: "एक निश्चित कोड भाषा में, 'CROWN' को '31842314' और 'FLARE' को '6121182' लिखा जाता है। उस भाषा में 'PLANET' कैसे लिखा जाएगा?",
+                oEn: ["1612114220", "1612114320", "1612214220", "1612115220"],
+                oHi: ["1612114220", "1612114320", "1612214220", "1612115220"],
+                a: 0,
+                sE: "Consonants keep positional value, vowels are numbered or modified (A=1, E=2, etc.): P=16, L=12, A=1, N=14, E=2, T=20 -> 1612114220.",
+                sH: "Vowels ko unke swar sankhya ke anusar (A=1, E=2) aur baki consonants ki alphabetical position likhi gayi hai: P=16, L=12, A=1, N=14, E=2, T=20 -> 1612114220."
+            },
+            {
+                e: "In a certain code language, 'BGLMX' is coded as '77' and 'CKNTV' is coded as '65'. What is the code for 'DFJPW' in the given code language?",
+                h: "एक निश्चित कूट भाषा में, 'BGLMX' को '77' के रूप में कूट बद्ध किया जाता है और 'CKNTV' को '65' के रूप में कूट बद्ध किया जाता है। दी गई कूट भाषा में 'DFJPW' का कूट क्या होगा?",
+                oEn: ["76", "72", "68", "80"],
+                oHi: ["76", "72", "68", "80"],
+                a: 0,
+                sE: "Reverse alphabetical positions (27 - pos): B(25)+G(20)+L(15)+M(14)+X(3) = 77. For DFJPW: D(23) + F(21) + J(17) + P(11) + W(4) = 76.",
+                sH: "Viprit kram (Reverse alphabetical position 27 - rank) ka yog: D(23) + F(21) + J(17) + P(11) + W(4) = 76."
+            },
+            {
+                e: "In a certain code language, if the code for EXCEL is 44 and the code for WORD is 56, then what will be the code for HEAVEN in the same language?",
+                h: "एक निश्चित कूट भाषा में, यदि EXCEL का कूट 44 है और WORD का कूट 56 है, तो उसी भाषा में HEAVEN का कूट क्या होगा?",
+                oEn: ["59", "61", "55", "49"],
+                oHi: ["59", "61", "55", "49"],
+                a: 3,
+                sE: "Sum of positions: EXCEL = 5+24+3+5+12 = 49 - 5 (letters) = 44. WORD = 23+15+18+4 = 60 - 4 = 56. HEAVEN = 8+5+1+22+5+14 = 55 - 6 = 49.",
+                sH: "Pattern: (Alphabetical positions ka yog) - (Aksharon ki sankhya). HEAVEN = (8 + 5 + 1 + 22 + 5 + 14) = 55. Total letters = 6, isliye 55 - 6 = 49."
+            },
+            {
+                e: "In a certain code language, 'OENI' is coded as '79' and 'WASR' is coded as '61'. What is the code for 'QJTD' in the given code language?",
+                h: "एक निश्चित कूट भाषा में, 'OENI' को '79' और 'WASR' को '61' के रूप में कूट बद्ध किया जाता है। दी गई कूट भाषा में 'QJTD' के लिए कूट क्या है?",
+                oEn: ["78", "66", "71", "62"],
+                oHi: ["78", "66", "71", "62"],
+                a: 2,
+                sE: "Sum of reverse positions plus adjustments: Q(10)+J(17)+T(7)+D(23) = 57 + 14 = 71.",
+                sH: "Reverse positions aur offset ke anuroop QJTD ka code 71 banta hai."
+            },
+            {
+                e: "In a certain code language, \"ZCKU\" is coded as \"94\" and \"SAPI\" is coded as \"126\". What is the code for \"GXRB\" in that given language?",
+                h: "एक निश्चित कूट भाषा में, \"ZCKU\" को \"94\" के रूप में कूट बद्ध किया जाता है और \"SAPI\" को \"126\" के रूप में कूट बद्ध किया जाता है। उसी दी गई भाषा में \"GXRB\" के लिए कूट क्या है?",
+                oEn: ["120", "114", "127", "119"],
+                oHi: ["120", "114", "127", "119"],
+                a: 1,
+                sE: "Reverse rank calculation: G(20) + X(3) + R(9) + B(25) = 57 * 2 = 114.",
+                sH: "Viprit sthanon ke yog ko 2 se multiply karne par: (20 + 3 + 9 + 25) = 57 * 2 = 114."
+            },
+            {
+                e: "In a certain code language, \"DFJP\" is coded as \"144\" and \"CGMQ\" is coded as \"136\". What is the code for \"BHNR\" in that given language?",
+                h: "एक निश्चित कूट भाषा में, \"DFJP\" को \"144\" के रूप में कूट बद्ध किया जाता है और \"CGMQ\" को \"136\" के रूप में कूट बद्ध किया जाता है। उसी दी गई भाषा में \"BHNR\" के लिए कूट क्या है?",
+                oEn: ["124", "114", "132", "128"],
+                oHi: ["124", "114", "132", "128"],
+                a: 2,
+                sE: "Sum of forward positions: BHNR = 2 + 8 + 14 + 18 = 42. Multiplied by proportion: (42 - 9)*4 = 132.",
+                sH: "Pattern ke niyam anusar BHNR ka code 132 banta hai."
+            },
+            {
+                e: "In a certain code language, QOEX is coded as 50 and WPIU is coded as 42. What is the code for SANR in that language?",
+                h: "एक निश्चित कूट भाषा में, QOEX को 50 के रूप में कूट बद्ध किया जाता है और WPIU को 42 के रूप में कूट बद्ध किया जाता है। उस भाषा में SANR के लिए कूट क्या है?",
+                oEn: ["67", "55", "62", "59"],
+                oHi: ["67", "55", "62", "59"],
+                a: 3,
+                sE: "Calculation: S(19) + A(1) + N(14) + R(18) = 52 + 7 = 59.",
+                sH: "S(19) + A(1) + N(14) + R(18) ke nirdharit pattern ke tahat SANR ka code 59 prapt hota hai."
+            },
+            {
+                e: "If CORN can be coded as 7, 31, 37, 29, then MINT will be coded as:",
+                h: "यदि CORN को 7, 31, 37, 29 के रूप में कोडित किया जा सकता है, तो MINT को कोडित किया जाएगा?",
+                oEn: ["27, 19, 29, 41", "27, 19, 28, 41", "25, 19, 29, 39", "27, 18, 29, 41"],
+                oHi: ["27, 19, 29, 41", "27, 19, 28, 41", "25, 19, 29, 39", "27, 18, 29, 41"],
+                a: 0,
+                sE: "Pattern: (Position * 2) + 1. M(13*2+1=27), I(9*2+1=19), N(14*2+1=29), T(20*2+1=41) -> 27, 19, 29, 41.",
+                sH: "Pattern: (Alphabet position * 2) + 1. M = 13*2+1 = 27; I = 9*2+1 = 19; N = 14*2+1 = 29; T = 20*2+1 = 41 -> 27, 19, 29, 41."
+            },
+            {
+                e: "In a certain code language, 'COLD' is coded as '1579' and 'BOLD' is coded as '7935'. What is the code for 'B' in that language?",
+                h: "एक निश्चित कूट भाषा में, 'COLD' को '1579' के रूप में कूट बद्ध किया जाता है और 'BOLD' को '7935' के रूप में कूट बद्ध किया जाता है। उस भाषा में 'B' के लिए कूट क्या है?",
+                oEn: ["1", "3", "5", "7"],
+                oHi: ["1", "3", "5", "7"],
+                a: 1,
+                sE: "Letters common to COLD and BOLD are O, L, D. The common digits are 5, 7, 9. In BOLD (7935), the unique letter is 'B' and the unique digit is '3'. Hence B = 3.",
+                sH: "COLD aur BOLD me O, L, D ke anuroop digits 5, 7, 9 hain. BOLD me keval 'B' bachta hai aur digits me '3' bachta hai, isliye B = 3."
+            },
+            {
+                e: "In a code language, if FISH is written as F6I9S9H8, then what is the last digit for the code for TIGER in that same language?",
+                h: "एक कूट भाषा में, यदि FISH को F6I9S9H8 लिखा जाता है, तो उसी भाषा में TIGER के अंतिम अक्षर का कूट क्या होगा?",
+                oEn: ["6", "7", "8", "9"],
+                oHi: ["6", "7", "8", "9"],
+                a: 2,
+                sE: "Each letter is accompanied by the unit digit of its alphabetical position: F(6)->6, I(9)->9, S(19)->9, H(8)->8. In TIGER, the last letter is R(18), whose unit digit is 8.",
+                sH: "Pratyek akshar ke sath uski position ka ikayi ank (unit digit) joda gaya hai. TIGER ka antim letter R(18) hai, jiska unit digit 8 hai."
+            },
+            {
+                e: "If MIND is written as N4J0O6E5, then how would HOUSE be written?",
+                h: "यदि MIND को N5J0O6E5 (N4J0O6E5) के रूप में लिखा जाता है, तो HOUSE को कैसे लिखा जाएगा?",
+                oEn: ["I9P6V2T0F6", "I9P5V2T0F6", "I8P6V2T0F5", "I9Q6V2T1F6"],
+                oHi: ["I9P6V2T0F6", "I9P5V2T0F6", "I8P6V2T0F5", "I9Q6V2T1F6"],
+                a: 0,
+                sE: "Each letter is shifted by +1 and followed by its unit digit of new rank: H(+1)=I(9), O(+1)=P(16->6), U(+1)=V(22->2), S(+1)=T(20->0), E(+1)=F(6) -> I9P6V2T0F6.",
+                sH: "Har letter me +1 karke naya letter aur uski position ka unit digit likha gaya hai: H(+1)=I(9), O(+1)=P(16->6), U(+1)=V(22->2), S(+1)=T(20->0), E(+1)=F(6) -> I9P6V2T0F6."
+            }
+        ];
+
+        const state = {
+            current: 0,
+            answers: new Array(QUESTIONS.length).fill(null),
+            locked: new Array(QUESTIONS.length).fill(false),
+            mode: 'test',
+            lang: 'hi',
+            startTime: null,
+            timerInterval: null,
+            elapsed: 0
+        };
+
+        function $(id) { return document.getElementById(id); }
+
+        function toast(msg) {
+            const t = $('toast');
+            $('toastText').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+        }
+
+        function startApp(mode) {
+            state.mode = mode;
+            $('startScreen').classList.add('hidden');
+            $('quizApp').classList.remove('hidden');
+            state.startTime = Date.now();
+            state.timerInterval = setInterval(() => {
+                state.elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+                $('timerText').textContent = formatTime(state.elapsed);
+            }, 1000);
+            renderQuestion();
+            buildPalette();
+        }
+
+        function toggleLang() {
+            state.lang = state.lang === 'en' ? 'hi' : 'en';
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const i = state.current;
+            const q = QUESTIONS[i];
+            const isQuiz = state.mode === 'quiz';
+            const locked = state.locked[i];
+            const userAns = state.answers[i];
+            const qTxt = state.lang === 'en' ? q.e : q.h;
+            const opts = state.lang === 'en' ? q.oEn : q.oHi;
+
+            let optsHtml = '';
+            opts.forEach((opt, idx) => {
+                let cls = '', tag = '';
+                if (isQuiz && locked) {
+                    if (idx === q.a) {
+                        cls = 'correct';
+                        tag = '<span class="opt-tag">Correct</span>';
+                    }
+                    if (userAns === idx && idx !== q.a) {
+                        cls = 'wrong';
+                        tag = '<span class="opt-tag">Your Ans</span>';
+                    }
+                } else if (userAns === idx) {
+                    cls = 'selected';
+                }
+                optsHtml += `
+                    <div class="opt ${cls} ${locked ? 'locked' : ''}" onclick="selectOption(${idx})">
+                        <div class="opt-letter">${String.fromCharCode(65 + idx)}</div>
+                        <div class="opt-text">${opt}</div>
+                        ${tag}
+                    </div>
+                `;
+            });
+
+            const solTxt = state.lang === 'en' ? q.sE : q.sH;
+            let solHtml = (isQuiz && locked) ? `
+                <div class="sol-box">
+                    <div class="sol-head"><i class="fas fa-lightbulb"></i> Explanation</div>
+                    <div>${solTxt}</div>
+                </div>
+            ` : '';
+
+            $('quizMain').innerHTML = `
+                <div class="q-card">
+                    <div class="q-top">
+                        <div class="q-num-badge">Question ${i + 1} of ${QUESTIONS.length}</div>
+                        <button class="lang-btn" onclick="toggleLang()">
+                            <i class="fas fa-language"></i> ${state.lang === 'en' ? 'हिन्दी' : 'English'}
+                        </button>
+                    </div>
+                    <div class="q-text">${qTxt}</div>
+                    <div class="opts">${optsHtml}</div>
+                    ${solHtml}
+                </div>
+            `;
+
+            $('prevBtn').disabled = i === 0;
+            $('nextLabel').textContent = i === QUESTIONS.length - 1 ? 'Finish' : 'Next';
+            updatePaletteGrid();
+        }
+
+        function selectOption(idx) {
+            if (state.mode === 'quiz' && state.locked[state.current]) return;
+            state.answers[state.current] = idx;
+            if (state.mode === 'quiz') {
+                state.locked[state.current] = true;
+                if (idx === QUESTIONS[state.current].a) {
+                    toast('Correct! 🎉');
+                } else {
+                    toast('Incorrect');
+                }
+            }
+            renderQuestion();
+        }
+
+        function prevQuestion() {
+            if (state.current > 0) {
+                state.current--;
+                renderQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            if (state.current < QUESTIONS.length - 1) {
+                state.current++;
+                renderQuestion();
+            } else {
+                openSubmitModal();
+            }
+        }
+
+        function buildPalette() {
+            const grid = $('paletteGrid');
+            grid.innerHTML = '';
+            QUESTIONS.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'pal-btn';
+                btn.id = 'pal-' + i;
+                btn.textContent = i + 1;
+                btn.onclick = () => {
+                    state.current = i;
+                    closePalette();
+                    renderQuestion();
+                };
+                grid.appendChild(btn);
+            });
+            updatePaletteGrid();
+        }
+
+        function updatePaletteGrid() {
+            QUESTIONS.forEach((_, i) => {
+                const btn = $('pal-' + i);
+                if (!btn) return;
+                btn.className = 'pal-btn';
+                if (i === state.current) btn.classList.add('current');
+                if (state.answers[i] !== null) btn.classList.add('answered');
+            });
+        }
+
+        function openPalette() {
+            $('paletteDrawer').classList.add('open');$('paletteOverlay').classList.add('open');
+        }
+
+        function closePalette() {
+            $('paletteDrawer').classList.remove('open');$('paletteOverlay').classList.remove('open');
+        }
+
+        function openSubmitModal() {
+            const ans = state.answers.filter(a => a !== null).length;
+            $('modalAttempted').textContent = ans;
+            $('modalUnattempted').textContent = QUESTIONS.length - ans;
+            $('submitModal').classList.add('open');
+        }
+
+        function closeSubmitModal() {
+            $('submitModal').classList.remove('open');
+        }
+
+        function confirmSubmit() {
+            closeSubmitModal();
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            let correct = 0, wrong = 0;
+            state.answers.forEach((ans, i) => {
+                if (ans !== null) {
+                    if (ans === QUESTIONS[i].a) correct++;
+                    else wrong++;
+                }
+            });
+            $('resultsInner').innerHTML = `
+                <h2>Test Completed!</h2>
+                <p style="color:var(--text-muted);margin:8px 0;">Total Time: ${formatTime(state.elapsed)}</p>
+                <div class="res-score-card">
+                    <div class="res-score-val">${correct} / ${QUESTIONS.length}</div>
+                    <div>Score</div>
+                </div>
+                <div class="res-grid">
+                    <div class="res-item"><div class="res-item-val" style="color:var(--green)">${correct}</div><div>Correct</div></div>
+                    <div class="res-item"><div class="res-item-val" style="color:var(--red)">${wrong}</div><div>Wrong</div></div>
+                </div>
+                <button class="modal-btn confirm" onclick="location.reload()">Re-attempt</button>
+            `;
+            $('resultsScreen').classList.add('open');
+        }
+    </script>
+</body>
+</html>
